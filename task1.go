@@ -9,7 +9,7 @@ func average_calculator(student_info map[string]float64) float64 {
 	}
 	student_info["total"] = tot
 	length := len(student_info)
-	average := tot / float64(length)
+	average := tot / float64(length-1)
 	return average
 }
 
