@@ -1,0 +1,45 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# IDE specific files
+.idea/
+*.iml
+
+# Logs
+*.log
+
+# Environment variables
+.env
+
+# Dependency directories (by default the dep tool stores dependencies here)
+vendor/
+
+# Go modules
+go.sum
+
+# Database configuration files
+*.config
+
+# Data files
+*.data
+*.sqlite
+
+# Backup files
+*.bak
+
+# Temporary files
+*.tmp
+
+# Test binaries
+*.test
+
+# Directory for Go tools
+tools/
