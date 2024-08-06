@@ -68,7 +68,52 @@ func AuthMiddleware(requiredRole string) gin.HandlerFunc{
 				return
 			}
 			
-			fmt.Print(" i was here ")
+		c.Next() // used to proceed the request further
+	}
+}
+
+func AuthUser() gin.HandlerFunc{
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+
+		if authHeader == ""{
+			c.JSON(401, gin.H{"error":"Authorization header missing!"})
+			c.Abort()
+			return
+		}
+
+		authParts := strings.Split(authHeader," ")
+		fmt.Print(authParts)
+
+		if len(authParts) != 2 || strings.ToLower(authParts[0]) != "bearer"{
+			c.JSON(401, gin.H{"error": "Invalid authorization header"})
+			c.Abort()
+			return
+		}
+
+		token, err := jwt.Parse(authParts[1],func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			  }
+			  return jwtSecret, nil
+		})
+
+		
+		if err != nil || !token.Valid {
+			c.JSON(401, gin.H{"error": "Invalid JWT"})
+			c.Abort()
+			return
+		}
+		
+		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+			
+			c.Set("user", claims) // store data in the ctx to make it accessible for the other handlers
+			} else {
+				c.JSON(401, gin.H{"error": "Invalid JWT claims"})
+				c.Abort()
+				return
+			}
+			c.JSON(200, gin.H{"message": "Allowed path"})
 		c.Next() // used to proceed the request further
 	}
 }

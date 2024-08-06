@@ -67,8 +67,6 @@ func Register(user models.User) (error){
 	defer cursor.Close(context.TODO())
 	if !cursor.Next(context.TODO()) {
 		user.Role = "admin"
-	} else if err!=nil{
-		return err
 	}else {
 		user.Role = "user"
 	}
@@ -183,4 +181,28 @@ func DeActivate(username string) error{
 		log.Fatal(err)
 	}
 	return nil 
+}
+
+func UpdateUser(username string)(error){
+	// fmt.Println(tasks)
+
+	filter := bson.D{{Key: "username", Value: username}}
+
+	var res *models.Task
+	err := collection.FindOne(context.TODO(),filter).Decode(&res)
+	if err != nil && err == mongo.ErrNoDocuments{
+		return err
+	} else if err!= nil{
+		log.Fatal(err)
+	}
+
+	update := bson.D{{Key: "$set",Value: bson.M{"role":"admin"}}}
+
+	result, err := collection.UpdateOne(context.TODO(), filter, update)
+	// fmt.Println(res)
+	if  err!=nil {
+		log.Fatal(err)
+	}
+	fmt.Print(result)
+	return nil // returns the updated tasks if the task is in there 	 
 }

@@ -165,3 +165,19 @@ func DeActivate(c *gin.Context){
 	}
 	c.JSON(200, gin.H{"message":"successfully deactivated!"})
 }
+
+func Promote(c *gin.Context) {
+	username := c.Param("username")
+	var UpdatedUser models.User
+	if err := c.ShouldBind(&UpdatedUser); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	// fmt.Println(tasks)
+	err := data.UpdateUser(username)
+	if err!=nil{
+		c.JSON(http.StatusNotFound, gin.H{"message": "User not found"}) // indicates the task with given id is not found in the db
+		return
+	}
+	c.IndentedJSON(http.StatusOK, gin.H{"message": "User updated"}) // updates successfully 
+}
