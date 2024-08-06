@@ -7,7 +7,6 @@ import (
 
 	"log"
 	"os"
-	"strconv"
 	"task_manager_with_db_and_auth/models"
 	"time"
 
@@ -20,6 +19,7 @@ import (
 )
 
 var jwtSecret []byte
+var collection *mongo.Collection
 
 func init() {
 	client := ConnectToDB()
@@ -32,7 +32,6 @@ func init() {
 	jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 }
 
-var collection *mongo.Collection
 
 func UserCollection(client *mongo.Client) *mongo.Collection{
 	return client.Database("task_manager").Collection("users") // creates a collection named tasks in task_manager db
@@ -46,7 +45,7 @@ func usernameExists(collection *mongo.Collection, username string) (bool, error)
     }
     return err == nil, nil
 }
-func Register(role string ,user models.User) (error){
+func Register(user models.User) (error){
 	// var client = ConnectToDB()
 	
 	// collection := UserCollection(client)
@@ -59,31 +58,53 @@ func Register(role string ,user models.User) (error){
 	if err!=nil{
 		return err
 	}
-
-	opts := options.FindOne().SetSort(bson.D{{Key: "id", Value: -1}})
-
-	// Iterate ti get the last user
-    var lastUser models.User
-    err = collection.FindOne(context.TODO(), bson.D{}, opts).Decode(&lastUser)
-	if err != nil && err != mongo.ErrNoDocuments {
-        log.Fatal("error, ",err)
-    }
+	findOption := options.Find()
+	cursor, err := collection.Find(context.TODO(),bson.D{{}},findOption)
+	if err!=nil{
+		return err
+	}
+	// fmt.Print(".,.,.,.,.,",err == mongo.ErrNoDocuments,",.,.,.,.,.")
+	defer cursor.Close(context.TODO())
+	if !cursor.Next(context.TODO()) {
+		user.Role = "admin"
+	} else if err!=nil{
+		return err
+	}else {
+		user.Role = "user"
+	}
 	
-	// taking the last id from the db and converting to int.
-	newID := "1"
-	if lastUser.ID != "" {
-        lastID, err := strconv.Atoi(lastUser.ID)
-        if err != nil {
-            log.Fatal(err)
-        }
-        newID = strconv.Itoa(lastID + 1)
-    }
-	
-	user.Role = role
-	user.ID = newID
-	fmt.Print("\n user password: ",user.Password)
 	user.Password = string(hashed)
+	user.Activate = "true"
+	insertOne, err := collection.InsertOne(context.TODO(),user)
+	if err!=nil{
+		return err
+	}
+	fmt.Print("\n inserted Id: ",insertOne.InsertedID,"\n")
+	return nil
+}
 
+func RegisterAdmin(user models.User) (error){
+	// var client = ConnectToDB()
+	
+	// collection := UserCollection(client)
+	got,_ := usernameExists(collection, user.Username)
+	if got{
+		return errors.New("username exists")
+	}
+	hashed, err := bcrypt.GenerateFromPassword([]byte(user.Password),bcrypt.DefaultCost)
+	
+	if err!=nil{
+		return err
+	}
+	findOption := options.Find()
+	_, err = collection.Find(context.TODO(),bson.D{{}},findOption)
+	if err!=nil && err!=mongo.ErrNoDocuments{
+		return err
+	}
+	user.Role = "admin"
+	
+	user.Password = string(hashed)
+	user.Activate = "true"
 	insertOne, err := collection.InsertOne(context.TODO(),user)
 	if err!=nil{
 		return err
@@ -124,3 +145,42 @@ func CheckUser(user models.User) (string,error ){
 	return jwtToken ,nil
 }
 
+func Activate(username string) error{
+	filter := bson.D{{Key: "username", Value: username}}
+	var res *models.User
+	err := collection.FindOne(context.TODO(),filter).Decode(&res)
+	if err != nil && err == mongo.ErrNoDocuments{
+		return err
+	} else if err!= nil{
+		log.Fatal(err)
+	}
+
+	update := bson.D{{Key: "$set",Value: bson.M{"activate":"true"}}}
+
+	_, err = collection.UpdateOne(context.TODO(), filter, update)
+	// fmt.Println(res)
+	if  err!=nil {
+		log.Fatal(err)
+	}
+	return nil 
+}
+
+func DeActivate(username string) error{
+	filter := bson.D{{Key: "username", Value: username}}
+	var res *models.User
+	err := collection.FindOne(context.TODO(),filter).Decode(&res)
+	fmt.Print(res)
+	if err != nil && err == mongo.ErrNoDocuments{
+		return err
+	} else if err!= nil{
+		log.Fatal(err)
+	}
+	update := bson.D{{Key: "$set",Value: bson.M{"activate":"false"}}}
+
+	_, err = collection.UpdateOne(context.TODO(), filter, update)
+	// fmt.Println(res)
+	if  err!=nil {
+		log.Fatal(err)
+	}
+	return nil 
+}

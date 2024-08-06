@@ -47,12 +47,13 @@ func AuthMiddleware(requiredRole string) gin.HandlerFunc{
 			  return jwtSecret, nil
 		})
 
+		
 		if err != nil || !token.Valid {
 			c.JSON(401, gin.H{"error": "Invalid JWT"})
 			c.Abort()
 			return
 		}
-
+		
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 			userRole:= claims["role"].(string)
 			if userRole != requiredRole && requiredRole != ""{
@@ -61,12 +62,13 @@ func AuthMiddleware(requiredRole string) gin.HandlerFunc{
 				return
 			}
 			c.Set("user", claims) // store data in the ctx to make it accessible for the other handlers
-		} else {
-			c.JSON(401, gin.H{"error": "Invalid JWT claims"})
-			c.Abort()
-			return
-		}
-
+			} else {
+				c.JSON(401, gin.H{"error": "Invalid JWT claims"})
+				c.Abort()
+				return
+			}
+			
+			fmt.Print(" i was here ")
 		c.Next() // used to proceed the request further
 	}
 }

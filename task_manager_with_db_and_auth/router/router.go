@@ -13,13 +13,15 @@ func CreateRouting(){
 	router.PUT("/tasks/:id",controllers.UpdateTask)
 	router.DELETE("/tasks/:id",controllers.DeleteTask)
 	router.POST("/tasks",controllers.AddTask)
-	router.POST("/register/:role",controllers.RegisterUser)
+	router.POST("/register",controllers.RegisterUser)
 	router.POST("/login",controllers.LoginUser)
 
 
 	protected:=router.Group("/protected")
 	protected.Use(middleware.AuthMiddleware("admin"))
-	protected.GET("/secrete",controllers.ProtectedHandler)
+	protected.POST("/register",controllers.RegisterAdmin)
+	protected.POST("/activate/:username",controllers.Activate)
+	protected.POST("/deactivate/:username",controllers.DeActivate)
 
 
 	router.Run("localhost:8080")

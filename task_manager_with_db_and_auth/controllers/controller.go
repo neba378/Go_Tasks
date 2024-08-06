@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"net/http"
 	"task_manager_with_db_and_auth/data"
 	"task_manager_with_db_and_auth/models"
@@ -84,9 +83,9 @@ func RegisterUser(c *gin.Context){
 		c.JSON(500, gin.H{"error":"internal error"})
 		return
 	}
-	role:=c.Param("role")
-	fmt.Print("-=-=-=",role)
-	err = data.Register(role,newUser)
+	// role:=c.Param("role")
+	// fmt.Print("-=-=-=",role)
+	err = data.Register(newUser)
 	if err!=nil{
 		c.JSON(http.StatusConflict, gin.H{"error":err.Error()})
 		return
@@ -128,4 +127,41 @@ func ProtectedHandler(c *gin.Context){
 	}
 
 	c.JSON(200, response)
+}
+
+
+func RegisterAdmin(c *gin.Context){
+	var newAdmin models.User
+	err := c.ShouldBindJSON(&newAdmin)
+	if err!= nil{
+		c.JSON(500, gin.H{"error":"internal error"})
+		return
+	}
+	err = data.RegisterAdmin(newAdmin)
+	if err!=nil{
+		c.JSON(http.StatusConflict, gin.H{"error":err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"message":"Successfully registered!"})
+}
+
+func Activate(c *gin.Context){
+	username := c.Param("username")
+	err := data.Activate(username)
+	if err!=nil{
+		c.JSON(500, gin.H{"error":err})
+		return
+	}
+	c.JSON(200, gin.H{"message":"successfully activated!"})
+}
+
+func DeActivate(c *gin.Context){
+	username := c.Param("username")
+	err := data.DeActivate(username)
+	if err!=nil{
+		c.JSON(500, gin.H{"error":err})
+		return
+	}
+	c.JSON(200, gin.H{"message":"successfully deactivated!"})
 }
