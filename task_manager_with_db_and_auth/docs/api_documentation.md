@@ -2,6 +2,31 @@
 **Introduction**
 The Task Management REST API is designed to manage tasks within a system. It supports operations such as creating, updating, retrieving, and deleting tasks. It also handles user registration and login, utilizing JWT for user authentication. There are two types of users: Normal users and Admins. Admins have additional privileges, such as activating/deactivating users and registering other admins. A middleware using JWT ensures that users have appropriate access based on their roles.
 
+# Summary of Clean Architecture Usage
+**Main Components**
+1.  Entities (Domain Layer)
+
+* `Domain/domain.go`: Defines the core domain models, including entities such as Task and User. This layer contains the fundamental business logic and entities, which are agnostic to any frameworks or external systems.
+
+2. Use Cases (Application Layer)
+
+* `Usecases/task_usecases.go`: Contains the application-specific business rules for managing tasks. Implements use cases such as creating, updating, and retrieving tasks.
+* `Usecases/user_usecases.go`: Contains the application-specific business rules for managing users. Implements use cases such as user registration, login, and role management.
+
+3. Interface Adapters (Adapter Layer)
+
+* `Delivery/handler/task_handler.go`: Provides HTTP handlers for managing tasks. These handlers interact with the TaskUsecase to perform actions and return responses.
+* `Delivery/handler/user_handler.go`: Provides HTTP handlers for user management. These handlers interact with the UserUsecase to perform actions and return responses.
+* `Delivery/routers/router.go`: Configures the API routes and links them to the appropriate handlers. This layer adapts the routing configuration to the handlers.
+
+4. Frameworks and Drivers (Infrastructure Layer)
+
+`Infrastructure/auth_middleWare.go`: Implements middleware for JWT authentication and authorization. Ensures that routes are protected and only accessible by authorized users.
+* `Infrastructure/jwt_service.go`: Contains Functions to generate and validate JWT tokens.
+* `Infrastructure/password_service.go`: Contains Functions for hashing and comparing passwords to ensure secure storage of user credentials.
+* `Repositories/task_repository.go`: Handles data access for tasks, including CRUD operations with the database.
+* `Repositories/user_repository.go`: Handles data access for users and admins.
+
 **System Requirements**
 
 - Go 1.22 or higher

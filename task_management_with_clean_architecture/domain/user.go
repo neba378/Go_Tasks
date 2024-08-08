@@ -1,8 +1,13 @@
 package domain
 
+import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
 type User struct {
-	ID       string `json:"id"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Role     string `json:"role"`
+	ID        primitive.ObjectID `bson:"_id,omitempty"`
+    Username  string             `bson:"username,omitempty"`
+    Password  string             `bson:"password,omitempty"`
+    Role      string             `bson:"role,omitempty"`
+    Activate  string             `bson:"activate,omitempty"`
 }

@@ -56,36 +56,45 @@ func (r *taskRepository) GetAll() ([]domain.Task, error){
     return tasks, nil
 }
 
-func (r *taskRepository) Add(task domain.Task)  error{
-	opts := options.FindOne().SetSort(bson.D{{Key: "id", Value: -1}})
+func (r *taskRepository) Add(task domain.Task) error {
+	// Retrieve all tasks and sort them by ID in descending order
+	opts := options.Find().SetSort(bson.D{{Key: "id", Value: -1}})
+	cursor, err := r.collection.Find(context.TODO(), bson.D{}, opts)
+	if err != nil {
+		return err
+	}
+	defer cursor.Close(context.TODO())
 
-	// Iterate ti get the last task
-    var lastTask domain.Task
-    err := r.collection.FindOne(context.TODO(), bson.D{}, opts).Decode(&lastTask)
-	// fmt.Println("one||||||\n")
-	if err != nil && err != mongo.ErrNoDocuments {
-        return err
-    }
-	task.Status = "Pending"
-
-	// taking the last id from the db and converting to int.
+	// Initialize the LastID
 	LastID := 0
-    if lastTask.ID != "" {
-        LastID, err = strconv.Atoi(lastTask.ID)
-        if err != nil {
-            return err
-        }
-    }
+	
+	// Iterate through the tasks to find the highest ID
+	for cursor.Next(context.TODO()) {
+		var existingTask domain.Task
+		if err := cursor.Decode(&existingTask); err != nil {
+			return err
+		}
+		
+		// Convert the existing ID to an integer
+		id, err := strconv.Atoi(existingTask.ID)
+		if err != nil {
+			return err
+		}
+		
+		// Update LastID if the current ID is higher
+		if id > LastID {
+			LastID = id
+		}
+	}
 
-	// add one to the last id to create new one
-	LastID+=1
-	t := strconv.Itoa(LastID)
-	task.ID = t
+	// Increment the LastID to get the new ID
+	LastID++
+	task.ID = strconv.Itoa(LastID)
+	task.Status = "Pending"
 	task.DueDate = time.Now()
-	_, err = r.collection.InsertOne(context.TODO(),task)
 
-	return err // returns nil after successful addition of new task
-
+	_, err = r.collection.InsertOne(context.TODO(), task)
+	return err
 }
 
 func (r *taskRepository) Delete(id string) error{

@@ -81,36 +81,6 @@ func Register(user models.User) (error){
 	return nil
 }
 
-func RegisterAdmin(user models.User) (error){
-	// var client = ConnectToDB()
-	
-	// collection := UserCollection(client)
-	got,_ := usernameExists(collection, user.Username)
-	if got{
-		return errors.New("username exists")
-	}
-	hashed, err := bcrypt.GenerateFromPassword([]byte(user.Password),bcrypt.DefaultCost)
-	
-	if err!=nil{
-		return err
-	}
-	findOption := options.Find()
-	_, err = collection.Find(context.TODO(),bson.D{{}},findOption)
-	if err!=nil && err!=mongo.ErrNoDocuments{
-		return err
-	}
-	user.Role = "admin"
-	
-	user.Password = string(hashed)
-	user.Activate = "true"
-	insertOne, err := collection.InsertOne(context.TODO(),user)
-	if err!=nil{
-		return err
-	}
-	fmt.Print("\n inserted Id: ",insertOne.InsertedID,"\n")
-	return nil
-}
-
 func CheckUser(user models.User) (string,error ){
 	
 	var existingUser models.User
@@ -142,6 +112,37 @@ func CheckUser(user models.User) (string,error ){
 	fmt.Println("message: ", "User successfully logged in, ", "token:", jwtToken)
 	return jwtToken ,nil
 }
+
+func RegisterAdmin(user models.User) (error){
+	// var client = ConnectToDB()
+	
+	// collection := UserCollection(client)
+	got,_ := usernameExists(collection, user.Username)
+	if got{
+		return errors.New("username exists")
+	}
+	hashed, err := bcrypt.GenerateFromPassword([]byte(user.Password),bcrypt.DefaultCost)
+	
+	if err!=nil{
+		return err
+	}
+	findOption := options.Find()
+	_, err = collection.Find(context.TODO(),bson.D{{}},findOption)
+	if err!=nil && err!=mongo.ErrNoDocuments{
+		return err
+	}
+	user.Role = "admin"
+	
+	user.Password = string(hashed)
+	user.Activate = "true"
+	insertOne, err := collection.InsertOne(context.TODO(),user)
+	if err!=nil{
+		return err
+	}
+	fmt.Print("\n inserted Id: ",insertOne.InsertedID,"\n")
+	return nil
+}
+
 
 func Activate(username string) error{
 	filter := bson.D{{Key: "username", Value: username}}

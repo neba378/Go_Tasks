@@ -2,7 +2,7 @@ package usecases
 
 import (
 	"task_with_clean_arc/domain"
-	"task_with_clean_arc/interfaces/repository"
+	"task_with_clean_arc/repository"
 )
 
 type TaskUsecase interface {
