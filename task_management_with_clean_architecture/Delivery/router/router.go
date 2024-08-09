@@ -1,7 +1,7 @@
 package router
 
 import (
-	"task_with_clean_arc/Delivery/handler"
+	"task_with_clean_arc/Delivery/controllers"
 	"task_with_clean_arc/infrastructures"
 	"task_with_clean_arc/repository"
 	"task_with_clean_arc/usecases"
@@ -21,8 +21,8 @@ func CreateRouting(client *mongo.Client) {
     taskUsecase := usecases.NewTaskUsecase(taskRepo)
 
     // Initialize handlers
-    userHandler := handler.NewUserHandler(userUsecase)
-    taskHandler := handler.NewTaskHandler(taskUsecase)
+    userHandler := controllers.NewUserHandler(userUsecase)
+    taskHandler := controllers.NewTaskHandler(taskUsecase)
 
     // Public routes
     router.POST("/register", userHandler.RegisterUser)
