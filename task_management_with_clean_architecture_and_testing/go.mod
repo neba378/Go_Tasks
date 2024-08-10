@@ -1,4 +1,4 @@
-module task_with_clean_arc
+module task_with_clean_arc_and_test
 
 go 1.22.5
 

@@ -1,8 +1,8 @@
 package usecases
 
 import (
-	"task_with_clean_arc/domain"
-	"task_with_clean_arc/repository"
+	"task_with_clean_arc_and_test/domain"
+	"task_with_clean_arc_and_test/repository"
 )
 
 type TaskUsecase interface {
