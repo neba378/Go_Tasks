@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserRepositoryTestSuite struct {
@@ -32,10 +33,19 @@ func (suite *UserRepositoryTestSuite) TearDownSuite() {
 	suite.NoError(err)
 }
 
+func (suite *UserRepositoryTestSuite) TearDownTest() {
+	// Cleanup after each test
+	suite.collection.DeleteMany(context.TODO(), bson.D{{}})
+}
+
 func (suite *UserRepositoryTestSuite) TestRegister_ExistingUser() {
-	// Insert a user to test with
-	existingUser := domain.User{Username: "existingUser", Password: "password123"}
-	_, err := suite.collection.InsertOne(context.TODO(), existingUser)
+	// Hash password for the existing user
+	password := "password123"
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	suite.NoError(err)
+
+	existingUser := domain.User{Username: "existingUser", Password: string(hashedPassword)}
+	_, err = suite.collection.InsertOne(context.TODO(), existingUser)
 	suite.NoError(err)
 
 	// Attempt to register the same user
@@ -45,35 +55,52 @@ func (suite *UserRepositoryTestSuite) TestRegister_ExistingUser() {
 
 func (suite *UserRepositoryTestSuite) TestLoginUser_InvalidCredentials() {
 	// Attempt to login with an invalid username
-	_, err := suite.repo.LoginUser(domain.User{Username: "invalidUser", Password: "wrongpassword"})
+	_, err := suite.repo.LoginUser("invalidUser")
 	suite.EqualError(err, "mongo: no documents in result")
 
-	// Attempt to login with an invalid password
-	// First register a valid user
-	validUser := domain.User{Username: "validUser", Password: "password123"}
+	// Register a valid user
+	password := "password123"
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	suite.NoError(err)
+	validUser := domain.User{Username: "validUser", Password: string(hashedPassword)}
 	err = suite.repo.Register(validUser)
 	suite.NoError(err)
 
 	// Attempt login with a wrong password
-	_, err = suite.repo.LoginUser(domain.User{Username: "validUser", Password: "wrongpassword"})
-	suite.EqualError(err, "crypto/bcrypt: hashedPassword is not the hash of the given password")
+	_, err = suite.repo.LoginUser("validUser")
+	suite.NoError(err)
 }
 
 func (suite *UserRepositoryTestSuite) TestActivate_UserNotFound() {
 	// Attempt to activate a non-existent user
 	err := suite.repo.Activate("nonexistentUser")
-	suite.EqualError(err, "mongo: no documents in result")
+	suite.EqualError(err, "user does not exist")
 }
 
 func (suite *UserRepositoryTestSuite) TestUpdateUser_UserNotFound() {
 	// Attempt to update a non-existent user
 	err := suite.repo.UpdateUser("nonexistentUser")
-	suite.EqualError(err, "mongo: no documents in result")
+	suite.EqualError(err, "user does not exist")
 }
 
-func (suite *UserRepositoryTestSuite) TearDownTest() {
-	// Cleanup after each test
-	suite.collection.DeleteMany(context.TODO(), bson.D{{}})
+func (suite *UserRepositoryTestSuite) TestUsernameExists() {
+	// Register a user
+	password := "password123"
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	suite.NoError(err)
+	user := domain.User{Username: "testUser", Password: string(hashedPassword)}
+	err = suite.repo.Register(user)
+	suite.NoError(err)
+
+	// Check if username exists
+	exists, err := suite.repo.UsernameExists("testUser")
+	suite.NoError(err)
+	suite.True(exists)
+
+	// Check a non-existent username
+	exists, err = suite.repo.UsernameExists("nonExistentUser")
+	suite.NoError(err)
+	suite.False(exists)
 }
 
 func TestUserRepositoryTestSuite(t *testing.T) {

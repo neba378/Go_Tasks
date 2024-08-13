@@ -85,7 +85,7 @@ func (h *UserHandler) Activate(c *gin.Context) {
 }
 func (h *UserHandler) DeActivate(c *gin.Context) {
 	username := c.Param("username")
-	err := h.Usecase.DeActivate(username)
+	err := h.Usecase.Deactivate(username)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err})
 		return
