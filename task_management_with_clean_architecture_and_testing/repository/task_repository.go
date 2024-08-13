@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strconv"
 	"task_with_clean_arc_and_test/domain"
 	"time"
@@ -92,20 +94,31 @@ func (r *taskRepository) Add(task domain.Task) error {
 	task.ID = strconv.Itoa(LastID)
 	task.Status = "Pending"
 	task.DueDate = time.Now()
-
+	if task.Title == "" || task.Description == "" {
+		return errors.New("please provide a title and description")
+	}
 	_, err = r.collection.InsertOne(context.TODO(), task)
 	return err
 }
 
 func (r *taskRepository) Delete(id string) error {
-	_, err := r.collection.DeleteOne(context.TODO(), bson.D{{Key: "id", Value: id}})
+	result, err := r.collection.DeleteOne(context.TODO(), bson.D{{Key: "id", Value: id}})
+	if result.DeletedCount == 0 {
+		return fmt.Errorf("task with id %s not found", id)
+	}
 	return err // deleted success
 }
 
 func (r *taskRepository) Update(id string, task domain.Task) error {
 	filter := bson.D{{Key: "id", Value: id}}
 	update := bson.D{{Key: "$set", Value: bson.M{"title": task.Title, "description": task.Description}}}
-	_, err := r.collection.UpdateOne(context.TODO(), filter, update)
+	if task.Title == "" || task.Description == "" {
+		return errors.New("please provide a title and description")
+	}
+	result, err := r.collection.UpdateOne(context.TODO(), filter, update)
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("task with id %s not found", id)
+	}
 
-	return err // returns the updated tasks if the task is in there
+	return err // returns nill if the task is in there
 }
