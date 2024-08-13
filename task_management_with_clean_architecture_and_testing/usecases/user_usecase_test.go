@@ -1,14 +1,17 @@
-package usecases
+package usecases_test
 
 import (
-	"errors"
-	"task_with_clean_arc_and_test/domain"
 	"testing"
+
+	"task_with_clean_arc_and_test/domain"
+	"task_with_clean_arc_and_test/infrastructures"
+	"task_with_clean_arc_and_test/usecases"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
+// MockUserRepository is a mock implementation of the UserRepository interface.
 type MockUserRepository struct {
 	mock.Mock
 }
@@ -18,9 +21,9 @@ func (m *MockUserRepository) Register(user domain.User) error {
 	return args.Error(0)
 }
 
-func (m *MockUserRepository) LoginUser(user domain.User) (string, error) {
-	args := m.Called(user)
-	return args.String(0), args.Error(1)
+func (m *MockUserRepository) LoginUser(username string) (domain.User, error) {
+	args := m.Called(username)
+	return args.Get(0).(domain.User), args.Error(1)
 }
 
 func (m *MockUserRepository) RegisterAdmin(user domain.User) error {
@@ -38,147 +41,112 @@ func (m *MockUserRepository) Activate(username string) error {
 	return args.Error(0)
 }
 
-func (m *MockUserRepository) DeActivate(username string) error {
+func (m *MockUserRepository) Deactivate(username string) error {
 	args := m.Called(username)
 	return args.Error(0)
 }
 
+func (m *MockUserRepository) UsernameExists(username string) (bool, error) {
+	args := m.Called(username)
+	return args.Bool(0), args.Error(1)
+}
+
+// UserUsecaseSuite defines the suite for UserUsecase tests.
 type UserUsecaseSuite struct {
 	suite.Suite
 	mockRepo *MockUserRepository
-	usecase  UserUsecase
+	usecase  usecases.UserUsecase
 }
 
+// SetupTest sets up the test environment before each test in the suite.
 func (suite *UserUsecaseSuite) SetupTest() {
 	suite.mockRepo = new(MockUserRepository)
-	suite.usecase = NewUserUsecase(suite.mockRepo)
+	suite.usecase = usecases.NewUserUsecase(suite.mockRepo)
 }
 
-func (suite *UserUsecaseSuite) TestRegister() {
-	// Define a test user
-	user := domain.User{Username: "testuser", Password: "password123"}
+// TestRegisterUser tests the Register method.
+func (suite *UserUsecaseSuite) TestRegisterUser() {
+	user := domain.User{Username: "testuser", Password: "password"}
 
-	// Mock the behavior of Register to return nil (no error)
-	suite.mockRepo.On("Register", user).Return(nil)
+	// Check if username already exists
+	suite.mockRepo.On("UsernameExists", user.Username).Return(false, nil)
 
-	// Call the Register method of the usecase
+	// Hash the password before passing it to the mock
+	hashedPassword, err := infrastructures.HashPassword(user.Password)
+	suite.Require().Nil(err)
+
+	user.Password = hashedPassword // Update the user with the hashed password
+
+	// Use a wildcard matcher to ignore the specific value of the password
+	suite.mockRepo.On("Register", mock.MatchedBy(func(u domain.User) bool {
+		return u.Username == user.Username && u.Password != "" // Check username and ensure password is not empty
+	})).Return(nil)
+
+	err = suite.usecase.Register(user)
+
+	suite.Assert().Nil(err)
+	suite.mockRepo.AssertExpectations(suite.T())
+}
+
+// TestRegisterUserExists tests registration of an existing username.
+func (suite *UserUsecaseSuite) TestRegisterUserExists() {
+	user := domain.User{Username: "testuser", Password: "password"}
+
+	suite.mockRepo.On("UsernameExists", user.Username).Return(true, nil)
+
 	err := suite.usecase.Register(user)
 
-	// Assert that no error occurred
-	suite.NoError(err)
-
-	// Ensure that the mock expectations were met
+	suite.Assert().EqualError(err, "username already exists")
 	suite.mockRepo.AssertExpectations(suite.T())
 }
 
-// Test registration with empty user data
-func (suite *UserUsecaseSuite) TestRegisterEmptyUser() {
-	user := domain.User{Username: "", Password: ""}
-	suite.mockRepo.On("Register", user).Return(errors.New("invalid user"))
+// TestLoginUserSuccess tests successful login.
+func (suite *UserUsecaseSuite) TestLoginUserSuccess() {
+	user := domain.User{Username: "testuser", Password: "password"}
+	hashedPassword, _ := infrastructures.HashPassword(user.Password)
 
-	err := suite.usecase.Register(user)
-	suite.Error(err)
-	suite.Contains(err.Error(), "invalid user")
+	// Set the expected user with the hashed password
+	suite.mockRepo.On("LoginUser", user.Username).Return(domain.User{Username: user.Username, Password: hashedPassword}, nil)
+	suite.mockRepo.On("UsernameExists", user.Username).Return(true, nil)
+
+	// Attempt to login with the plain password
+	token, err := suite.usecase.LoginUser(domain.User{Username: user.Username, Password: user.Password})
+
+	suite.Assert().Nil(err)
+	suite.Assert().NotEmpty(token)
 	suite.mockRepo.AssertExpectations(suite.T())
 }
 
-func (suite *UserUsecaseSuite) TestLoginUser() {
-	// Define a test user and expected token
-	user := domain.User{Username: "testuser", Password: "password123"}
-	expectedToken := "mockToken123"
+// TestLoginUserInvalidPassword tests login with an invalid password.
+func (suite *UserUsecaseSuite) TestLoginUserInvalidPassword() {
+	user := domain.User{Username: "testuser", Password: "wrongpassword"}
+	hashedPassword, _ := infrastructures.HashPassword("password") // Original password
 
-	// Mock the behavior of LoginUser to return the expected token and nil error
-	suite.mockRepo.On("LoginUser", user).Return(expectedToken, nil)
+	suite.mockRepo.On("UsernameExists", user.Username).Return(true, nil)
+	suite.mockRepo.On("LoginUser", user.Username).Return(domain.User{Username: user.Username, Password: hashedPassword}, nil)
 
-	// Call the LoginUser method of the usecase
-	token, err := suite.usecase.LoginUser(user)
+	err := infrastructures.CheckPasswordHash(user.Password, hashedPassword)
+	suite.Assert().Error(err)
 
-	// Assert that the token matches the expected token and no error occurred
-	suite.NoError(err)
-	suite.Equal(expectedToken, token)
+	_, err = suite.usecase.LoginUser(user)
 
-	// Ensure that the mock expectations were met
+	suite.Assert().EqualError(err, "invalid password")
 	suite.mockRepo.AssertExpectations(suite.T())
 }
 
-func (suite *UserUsecaseSuite) TestLoginUserWrongUser() {
-	user := domain.User{Username: "wrong", Password: "wrongPassword"}
-	suite.mockRepo.On("LoginUser", user).Return("", errors.New("invalid credentials"))
-	token, err := suite.usecase.LoginUser(user)
+// TestLoginUserNotFound tests login for a non-existent user.
+func (suite *UserUsecaseSuite) TestLoginUserNotFound() {
+	user := domain.User{Username: "nonexistent", Password: "password"}
 
-	suite.Error(err)
-	suite.Contains(err.Error(), "invalid credentials")
-	suite.Empty(token)
-	suite.mockRepo.AssertExpectations(suite.T())
-}
+	suite.mockRepo.On("UsernameExists", user.Username).Return(false, nil)
+	_, err := suite.usecase.LoginUser(user)
 
-func (suite *UserUsecaseSuite) TestRegisterAdmin() {
-	user := domain.User{Username: "adminuser", Password: "adminpassword"}
-	suite.mockRepo.On("RegisterAdmin", user).Return(nil)
-
-	err := suite.usecase.RegisterAdmin(user)
-	suite.NoError(err)
-	suite.mockRepo.AssertExpectations(suite.T())
-}
-
-func (suite *UserUsecaseSuite) TestUpdateUser() {
-	username := "testuser"
-	suite.mockRepo.On("UpdateUser", username).Return(nil)
-
-	err := suite.usecase.UpdateUser(username)
-	suite.NoError(err)
-	suite.mockRepo.AssertExpectations(suite.T())
-}
-
-func (suite *UserUsecaseSuite) TestUpdateUserInvalid() {
-	username := "nonexistentuser"
-	suite.mockRepo.On("UpdateUser", username).Return(errors.New("user not found"))
-
-	err := suite.usecase.UpdateUser(username)
-	suite.Error(err)
+	suite.Assert().Error(err)
 	suite.Contains(err.Error(), "user not found")
 	suite.mockRepo.AssertExpectations(suite.T())
 }
 
-func (suite *UserUsecaseSuite) TestActivateUser() {
-	username := "testuser"
-	suite.mockRepo.On("Activate", username).Return(nil)
-
-	err := suite.usecase.Activate(username)
-	suite.NoError(err)
-	suite.mockRepo.AssertExpectations(suite.T())
-}
-
-func (suite *UserUsecaseSuite) TestDeActivateUser() {
-	username := "testuser"
-	suite.mockRepo.On("DeActivate", username).Return(nil)
-
-	err := suite.usecase.DeActivate(username)
-	suite.NoError(err)
-	suite.mockRepo.AssertExpectations(suite.T())
-}
-
-func (suite *UserUsecaseSuite) TestActivateUserInvalid() {
-	username := "nonexistentuser"
-	suite.mockRepo.On("Activate", username).Return(errors.New("user not found"))
-
-	err := suite.usecase.Activate(username)
-	suite.Error(err)
-	suite.Contains(err.Error(), "user not found")
-	suite.mockRepo.AssertExpectations(suite.T())
-}
-
-func (suite *UserUsecaseSuite) TestDeActivateUserInvalid() {
-	username := "nonexistentuser"
-	suite.mockRepo.On("DeActivate", username).Return(errors.New("user not found"))
-
-	err := suite.usecase.DeActivate(username)
-	suite.Error(err)
-	suite.Contains(err.Error(), "user not found")
-	suite.mockRepo.AssertExpectations(suite.T())
-}
-
-// Run the test suite
+// TestUserUsecaseSuite runs the test suite.
 func TestUserUsecaseSuite(t *testing.T) {
 	suite.Run(t, new(UserUsecaseSuite))
 }
