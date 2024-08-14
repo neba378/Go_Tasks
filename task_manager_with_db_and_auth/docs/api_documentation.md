@@ -193,63 +193,140 @@ go run main.go
   "error": "failed to delete task"
 }
 ```
-6. User Registration
+## User Related Endpoints
 
-- Description: Registers users based on the role specified.
-- Method: POST
-- Endpoint: /register
+### 1. **Register User**
+   - **Description:** Registers a new user.
+   - **Method:** POST
+   - **Endpoint:** `/register`
+   - **Input:** JSON object with user details.
+     ```json
+     {
+       "username": "new_user",
+       "password": "password123"
+     }
+     ```
+   - **Response:**
+     - **Success:** 
+       - **Status Code:** `201 Created`
+       - **Example:**
+         ```json
+         {
+           "message": "User registered"
+         }
+         ```
+     - **Error:**
+       - **Status Code:** `400 Bad Request`
+       - **Message:** "Invalid input data."
+       - **Example:**
+         ```json
+         {
+           "error": "Invalid input data."
+         }
+         ```
 
-- Input:
-```json
+### 2. **User Login**
+   - **Description:** Authenticates a user and provides a JWT token.
+   - **Method:** POST
+   - **Endpoint:** `/login`
+   - **Input:** JSON object with login credentials.
+     ```json
+     {
+       "username": "existing_user",
+       "password": "password123"
+     }
+     ```
+   - **Response:**
+     - **Success:** 
+       - **Status Code:** `200 OK`
+       - **Example:**
+         ```json
+         {
+           "token": "jwt_token_here"
+         }
+         ```
+     - **Error:**
+       - **Status Code:** `401 Unauthorized`
+       - **Message:** "Invalid username or password."
+       - **Example:**
+         ```json
+         {
+           "error": "Invalid username or password."
+         }
+         ```
 
-{
-  "username": "newuser",
-  "password": "password"
-}
-```
-- Response:
-- - Success:
-```json
+### 3. **Promote User to Admin**
+   - **Description:** Promotes an existing user to an admin role.
+   - **Method:** PUT
+   - **Endpoint:** `/admin/promote/{id}`
+   - **Input:** User ID in the URL path.
+   - **Response:**
+     - **Success:** 
+       - **Status Code:** `200 OK`
+       - **Example:**
+         ```json
+         {
+           "message": "User promoted to admin"
+         }
+         ```
+     - **Error:**
+       - **Status Code:** `404 Not Found`
+       - **Message:** "User not found."
+       - **Example:**
+         ```json
+         {
+           "error": "User not found"
+         }
+         ```
 
-{
-  "message": "User successfully registered"
-}
-```
-- Error:
-```json
-{
-  "error": "username exists"
-}
-```
-7. Login
+### 4. **Activate User**
+   - **Description:** Activates a user account.
+   - **Method:** PUT
+   - **Endpoint:** `/admin/activate/{id}`
+   - **Input:** User ID in the URL path.
+   - **Response:**
+     - **Success:** 
+       - **Status Code:** `200 OK`
+       - **Example:**
+         ```json
+         {
+           "message": "User account activated"
+         }
+         ```
+     - **Error:**
+       - **Status Code:** `404 Not Found`
+       - **Message:** "User not found."
+       - **Example:**
+         ```json
+         {
+           "error": "User not found"
+         }
+         ```
 
-- Description: Logs in users and provides a JWT token.
-- Method: POST
-- Endpoint: /login
+### 5. **Deactivate User**
+   - **Description:** Deactivates a user account.
+   - **Method:** PUT
+   - **Endpoint:** `/admin/deactivate/{id}`
+   - **Input:** User ID in the URL path.
+   - **Response:**
+     - **Success:** 
+       - **Status Code:** `200 OK`
+       - **Example:**
+         ```json
+         {
+           "message": "User account deactivated"
+         }
+         ```
+     - **Error:**
+       - **Status Code:** `404 Not Found`
+       - **Message:** "User not found."
+       - **Example:**
+         ```json
+         {
+           "error": "User not found"
+         }
+         ```
 
-8. User Activation
-
-- Description: Activates a user account.
-- Method: POST
-- Endpoint: /activate/:username
-- Parameters:
-`username`: The username of the account to activate.
-
-9. User Deactivation
-
-- Description: Deactivates a user account.
-- Method: POST
-- Endpoint: /deactivate/:username
-- Parameters:
-`username`: The username of the account to deactivate.
-
-10. Promote User
-
-- Description: Promotes a user to an admin role.
-- Method: GET
-- Endpoint: /promote/:username
-- Parameters:
-`username`: The username of the user to promote.
 
 **Error Handling**
 The API handles errors such as:

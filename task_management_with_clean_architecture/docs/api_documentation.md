@@ -172,6 +172,141 @@ The application is structured based on the Clean Architecture, ensuring separati
          }
          ```
 
+## User Related Endpoints
+
+### 1. **Register User**
+   - **Description:** Registers a new user.
+   - **Method:** POST
+   - **Endpoint:** `/register`
+   - **Input:** JSON object with user details.
+     ```json
+     {
+       "username": "new_user",
+       "password": "password123"
+     }
+     ```
+   - **Response:**
+     - **Success:** 
+       - **Status Code:** `201 Created`
+       - **Example:**
+         ```json
+         {
+           "message": "User registered"
+         }
+         ```
+     - **Error:**
+       - **Status Code:** `400 Bad Request`
+       - **Message:** "Invalid input data."
+       - **Example:**
+         ```json
+         {
+           "error": "Invalid input data."
+         }
+         ```
+
+### 2. **User Login**
+   - **Description:** Authenticates a user and provides a JWT token.
+   - **Method:** POST
+   - **Endpoint:** `/login`
+   - **Input:** JSON object with login credentials.
+     ```json
+     {
+       "username": "existing_user",
+       "password": "password123"
+     }
+     ```
+   - **Response:**
+     - **Success:** 
+       - **Status Code:** `200 OK`
+       - **Example:**
+         ```json
+         {
+           "token": "jwt_token_here"
+         }
+         ```
+     - **Error:**
+       - **Status Code:** `401 Unauthorized`
+       - **Message:** "Invalid username or password."
+       - **Example:**
+         ```json
+         {
+           "error": "Invalid username or password."
+         }
+         ```
+
+### 3. **Promote User to Admin**
+   - **Description:** Promotes an existing user to an admin role.
+   - **Method:** PUT
+   - **Endpoint:** `/admin/promote/{id}`
+   - **Input:** User ID in the URL path.
+   - **Response:**
+     - **Success:** 
+       - **Status Code:** `200 OK`
+       - **Example:**
+         ```json
+         {
+           "message": "User promoted to admin"
+         }
+         ```
+     - **Error:**
+       - **Status Code:** `404 Not Found`
+       - **Message:** "User not found."
+       - **Example:**
+         ```json
+         {
+           "error": "User not found"
+         }
+         ```
+
+### 4. **Activate User**
+   - **Description:** Activates a user account.
+   - **Method:** PUT
+   - **Endpoint:** `/admin/activate/{id}`
+   - **Input:** User ID in the URL path.
+   - **Response:**
+     - **Success:** 
+       - **Status Code:** `200 OK`
+       - **Example:**
+         ```json
+         {
+           "message": "User account activated"
+         }
+         ```
+     - **Error:**
+       - **Status Code:** `404 Not Found`
+       - **Message:** "User not found."
+       - **Example:**
+         ```json
+         {
+           "error": "User not found"
+         }
+         ```
+
+### 5. **Deactivate User**
+   - **Description:** Deactivates a user account.
+   - **Method:** PUT
+   - **Endpoint:** `/admin/deactivate/{id}`
+   - **Input:** User ID in the URL path.
+   - **Response:**
+     - **Success:** 
+       - **Status Code:** `200 OK`
+       - **Example:**
+         ```json
+         {
+           "message": "User account deactivated"
+         }
+         ```
+     - **Error:**
+       - **Status Code:** `404 Not Found`
+       - **Message:** "User not found."
+       - **Example:**
+         ```json
+         {
+           "error": "User not found"
+         }
+         ```
+
+
 ## Error Handling
 The API handles errors such as:
 - **Invalid Task IDs:** Returns a `400 Bad Request` or `404 Not Found` with a descriptive error message.
