@@ -104,7 +104,7 @@ func (r *taskRepository) Add(task domain.Task) error {
 func (r *taskRepository) Delete(id string) error {
 	result, err := r.collection.DeleteOne(context.TODO(), bson.D{{Key: "id", Value: id}})
 	if result.DeletedCount == 0 {
-		return fmt.Errorf("task with id %s not found", id)
+		return errors.New("Task not found")
 	}
 	return err // deleted success
 }
