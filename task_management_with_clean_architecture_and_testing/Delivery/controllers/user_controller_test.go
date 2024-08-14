@@ -140,7 +140,6 @@ func (suite *UserHandlerTestSuite) TestLoginUser_Success() {
 	// Serve the request
 	suite.router.ServeHTTP(w, req)
 	// Check that the status code is 200 OK
-	// Check that the status code is 200 OK
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
 
 	// Define the expected response body
