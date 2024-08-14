@@ -111,7 +111,6 @@ func AuthUser() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		c.JSON(200, gin.H{"message": "Allowed path"})
 		c.Next() // used to proceed the request further
 	}
 }
