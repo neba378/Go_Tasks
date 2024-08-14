@@ -14,23 +14,22 @@ func average_calculator(student_info map[string]float64) float64 {
 }
 
 func display_info(student_name string, average float64, student_info map[string]float64) {
-	fmt.Printf("\n---------------CALCULATED RESULT FOR %v----------------\n\n",student_name)
+	fmt.Printf("\n---------------CALCULATED RESULT FOR %v----------------\n\n", student_name)
 	for k, v := range student_info {
-		if k == "total"{
+		if k == "total" {
 			continue
 		}
-		fmt.Printf("%v : %0.2f \n",k,v)
+		fmt.Printf("%v : %0.2f \n", k, v)
 	}
-	fmt.Printf("%v : %0.2f\n","Total",student_info["total"])
+	fmt.Printf("%v : %0.2f\n", "Total", student_info["total"])
 
-	fmt.Printf("%v : %0.3f\n","Average",average)
-	fmt.Println("\n---------------THANKS----------------\n")
+	fmt.Printf("%v : %0.3f\n", "Average", average)
 
 }
 
-func accept_info() (string,map[string]float64){
+func accept_info() (string, map[string]float64) {
 	fmt.Println("---------------WELCOME TO AVERAGE CALCULATOR----------------")
-	name:=""
+	name := ""
 	fmt.Print("Please enter your name: ")
 	fmt.Scan(&name)
 	subject := 0
@@ -39,12 +38,12 @@ func accept_info() (string,map[string]float64){
 	var student_info map[string]float64 = map[string]float64{}
 	var sub_name string
 	var point float64
-	for i:=1;i<subject+1; i++{
-		fmt.Printf("Enter Subject %v name: ",i)
+	for i := 1; i < subject+1; i++ {
+		fmt.Printf("Enter Subject %v name: ", i)
 		fmt.Scan(&sub_name)
-		fmt.Printf("Enter Subject %v point: ",i)
+		fmt.Printf("Enter Subject %v point: ", i)
 		fmt.Scan(&point)
-		if point>100 || point<0{
+		if point > 100 || point < 0 {
 			fmt.Print("Please Enter correct value (0-100)) for the point again : ")
 			fmt.Scan(&point)
 		}
@@ -54,12 +53,11 @@ func accept_info() (string,map[string]float64){
 }
 
 func main() {
-	name, student_info:=accept_info()
+	name, student_info := accept_info()
 	average := average_calculator(student_info)
-	display_info(name,average,student_info)
+	display_info(name, average, student_info)
 
 }
-
 
 /*
 		Test Cases
