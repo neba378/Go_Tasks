@@ -16,20 +16,6 @@ func NewUserHandler(u usecases.UserUsecase) *UserHandler {
 	return &UserHandler{Usecase: u}
 }
 
-func (h *UserHandler) RegisterUser(c *gin.Context) {
-
-	var user domain.User
-	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	if err := h.Usecase.Register(user); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusCreated, gin.H{"message": "User registered"})
-}
-
 func (h *UserHandler) LoginUser(c *gin.Context) {
 	var user domain.User
 	if err := c.ShouldBindJSON(&user); err != nil {
@@ -42,6 +28,21 @@ func (h *UserHandler) LoginUser(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"token": token})
+}
+func (h *UserHandler) RegisterUser(c *gin.Context) {
+	var user domain.User
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := h.Usecase.Register(user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register user"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "User registered"})
 }
 
 func (h *UserHandler) RegisterAdmin(c *gin.Context) {
@@ -57,7 +58,7 @@ func (h *UserHandler) RegisterAdmin(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, gin.H{"message": "Successfully registered!"})
+	c.JSON(201, gin.H{"message": "Successfully registered!"})
 }
 func (h *UserHandler) Promote(c *gin.Context) {
 	username := c.Param("username")
